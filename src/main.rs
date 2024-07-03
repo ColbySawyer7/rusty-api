@@ -53,7 +53,6 @@ struct Prompt {
 
 #[derive(Serialize)]
 struct PromptResponse {
-    id: u32,
     question: String,
     answer: String,
 }
@@ -61,25 +60,24 @@ struct PromptResponse {
 #[actix_web::post("/chat")]
 async fn ask_chat(
     prompt: web::Json<Prompt>,
-    db: web::Data<UserDb>,
 ) -> Result<impl Responder, Error> {
-    let question = prompt.question.clone();
-    let db = db.lock().unwrap();
-    let new_id = db.keys().max().unwrap_or(&0) + 1;
+    let question = &prompt.question;
 
     let ollama = Ollama::new("http://localhost".to_string(), 11434);
-
     let model = "llama3:latest".to_string();
 
-    let res = ollama
-        .generate(GenerationRequest::new(model, question))
-        .await;
-
-    if let Ok(res) = res {
-        let answer = format!("Answer: {}", res.response);
-        Ok(HttpResponse::Ok().json(answer))
-    } else {
-        Err(ErrorNotFound("User not found"))
+    match ollama
+        .generate(GenerationRequest::new(model, question.clone()))
+        .await
+    {
+        Ok(res) => {
+            let response = PromptResponse {
+                question: question.clone(),
+                answer: res.response,
+            };
+            Ok(HttpResponse::Ok().json(response))
+        }
+        Err(_) => Err(actix_web::error::ErrorNotFound("User not found")),
     }
 }
 
