@@ -7,6 +7,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use ollama_rs::{generation::completion::request::GenerationRequest, Ollama};
+
 #[derive(Serialize, Deserialize)]
 struct User {
     name: String,
@@ -44,6 +46,43 @@ async fn create_user(user_data: web::Json<User>, db: web::Data<UserDb>) -> impl 
     HttpResponse::Created().json(CreateUserResponse { id: new_id, name })
 }
 
+#[derive(Serialize, Deserialize)]
+struct Prompt {
+    question: String,
+}
+
+#[derive(Serialize)]
+struct PromptResponse {
+    id: u32,
+    question: String,
+    answer: String,
+}
+
+#[actix_web::post("/chat")]
+async fn ask_chat(
+    prompt: web::Json<Prompt>,
+    db: web::Data<UserDb>,
+) -> Result<impl Responder, Error> {
+    let question = prompt.question.clone();
+    let db = db.lock().unwrap();
+    let new_id = db.keys().max().unwrap_or(&0) + 1;
+
+    let ollama = Ollama::new("http://localhost".to_string(), 11434);
+
+    let model = "llama3:latest".to_string();
+
+    let res = ollama
+        .generate(GenerationRequest::new(model, question))
+        .await;
+
+    if let Ok(res) = res {
+        let answer = format!("Answer: {}", res.response);
+        Ok(HttpResponse::Ok().json(answer))
+    } else {
+        Err(ErrorNotFound("User not found"))
+    }
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let port = 8080;
@@ -58,6 +97,7 @@ async fn main() -> std::io::Result<()> {
             .service(greet)
             .service(create_user)
             .service(get_user)
+            .service(ask_chat)
     })
     .bind(("127.0.0.1", port))?
     .workers(2)
