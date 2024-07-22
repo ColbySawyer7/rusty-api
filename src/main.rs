@@ -1,6 +1,4 @@
-use actix_web::{
-    web, App, HttpResponse, HttpServer, Responder,
-};
+use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -10,9 +8,9 @@ mod schemas;
 use schemas::user::User;
 mod api;
 
-#[actix_web::get("/greet")]
-async fn greet() -> impl Responder {
-    format!("Welcome my CRUD Rust API")
+#[actix_web::get("/")]
+async fn index() -> impl Responder {
+    "Welcome my CRUD Rust API".to_string()
 }
 
 #[actix_web::get("/live")]
@@ -36,14 +34,14 @@ async fn main() -> std::io::Result<()> {
         let app_data = web::Data::new(user_db.clone());
         App::new()
             .app_data(app_data)
-            .service(greet)
+            .service(index)
             .service(live)
             .service(ready)
             .service(api::user::create_user)
             .service(api::user::get_user)
             .service(api::chat::ask_chat)
     })
-    .bind(("127.0.0.1", port))?
+    .bind(("0.0.0.0", port))?
     .workers(2)
     .run()
     .await

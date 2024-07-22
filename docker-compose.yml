@@ -3,16 +3,16 @@ services:
     container_name: rust-api
     build: .
     ports:
-      - "8080:8080"
-    depends_on:
-      - db
-  db:
-    image: postgres:15.2-alpine
-    restart: always
-    ports:
-      - "5432:5432"
-    volumes:
-      - db:/var/lib/postgresql/data
+      - 8080:8080
+#    depends_on:
+#      - db
+#  db:
+#    image: postgres:15.2-alpine
+#    restart: always
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - db:/var/lib/postgresql/data
 
   ollama:
     volumes:
@@ -49,5 +49,5 @@ services:
 volumes:
   ollama: {}
   open-webui: {}
-  db:
-    driver: local
+#  db:
+#    driver: local
