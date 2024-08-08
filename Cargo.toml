@@ -10,3 +10,4 @@ serde = {version="^1",features = ["derive"]}
 log ="^0.4"
 ollama-rs = "^0.2.0"
 dotenv = "^0.15.0"
+openssl = "^0.10.66"
